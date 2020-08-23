@@ -1,0 +1,14 @@
+{
+  "name": "{{ PROJECT_NAME }}",
+  "version": "1.0.0",
+  "scripts": {},
+  "dependencies": {},
+  "devDependencies": {
+    "eslint": "^7.7.0",
+    "prettier": "^2.0.5",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.7"
+  },
+  "author": "Wen Jun",
+  "license": "UNLICENSED"
+}

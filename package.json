@@ -1,0 +1,42 @@
+{
+  "name": "relax",
+  "version": "1.0.0",
+  "keywords": [
+    "CLI"
+  ],
+  "main": "lib/index.js",
+  "bin": {
+    "relax": "lib/index.js"
+  },
+  "files": [
+    "lib",
+    "template"
+  ],
+  "scripts": {
+    "start": "rm -rf tmp && ts-node src/index.ts",
+    "start:watch": "nodemon --ext .ts --watch src --exec 'ts-node src/index.ts'",
+    "build": "rm -rf lib && tsc --build",
+    "build:watch": "nodemon --ext .ts --watch src --exec 'tsc --build'"
+  },
+  "dependencies": {
+    "art-template": "^4.13.2",
+    "chalk": "^4.1.0",
+    "commander": "^6.0.0",
+    "execa": "^4.0.3",
+    "listr": "^0.14.3",
+    "lodash": "^4.17.20",
+    "prompts": "^2.3.2"
+  },
+  "devDependencies": {
+    "@types/listr": "^0.14.2",
+    "@types/lodash": "^4.14.159",
+    "@types/prompts": "^2.0.8",
+    "eslint": "^7.7.0",
+    "nodemon": "^2.0.4",
+    "prettier": "^2.0.5",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.7"
+  },
+  "author": "Wen Jun",
+  "license": "UNLICENSED"
+}
