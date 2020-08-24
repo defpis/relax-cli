@@ -10,11 +10,14 @@ import Listr from "listr";
 import execa from "execa";
 import { checkName, copyDir } from "./utils";
 
+// 模版管道
 template.defaults.imports.upperCase = (value: string) => {
   return value.toUpperCase();
 };
 
+// 内置模版
 const TEMPLATE_DIR = path.resolve(path.dirname(__dirname), "./template");
+// 工作目录
 const WORK_DIR = process.cwd();
 
 /**
@@ -43,12 +46,14 @@ function getCmd(): commander.Command {
     "show current version"
   );
 
+  // 创建参数
   const create = program.command("create [dir]").action((dir) => {
     if (!checkName(dir)) {
       create.help();
     }
   });
 
+  // 解析参数
   program.parse(process.argv);
 
   return program;
@@ -62,7 +67,9 @@ function copyTemplate(
   dist: string,
   templateArgs?: { [k: string]: any }
 ) {
+  // 拷贝模版
   copyDir(src, dist, (value: string) => {
+    // 渲染文件夹名、文件名和文件内容
     return template.render(value || "", templateArgs);
   });
 }
@@ -73,6 +80,7 @@ function copyTemplate(
 async function createApp(cwd: string) {
   const tasks: any = [
     {
+      // 初始化git
       title: `initialize git in ${cwd}`,
       task: () => {
         console.log(execa.commandSync("git init", { cwd }).stdout);
@@ -81,6 +89,7 @@ async function createApp(cwd: string) {
       },
     },
     {
+      // 优先yarn安装依赖
       title: "install package dependencies with yarn",
       task: (ctx: any, task: any) =>
         execa.command("yarn install", { cwd }).catch(() => {
@@ -89,6 +98,7 @@ async function createApp(cwd: string) {
         }),
     },
     {
+      // yarn不可用，使用npm安装依赖
       title: "install package dependencies with npm",
       enabled: (ctx: any) => ctx.npm,
       task: () => execa.command("npm install", { cwd }),
@@ -97,6 +107,7 @@ async function createApp(cwd: string) {
 
   const { template } = await prompts([
     {
+      // 选择模版
       message: "pick template",
       type: "select",
       name: "template",
@@ -110,12 +121,14 @@ async function createApp(cwd: string) {
   if (template === "link") {
     const { templateLink } = await prompts([
       {
+        // 输入模版链接
         message: "template link:",
         type: "text",
         name: "templateLink",
       },
     ]);
 
+    // 克隆到临时目录
     const tmpDir = "/tmp/relax-template-repo";
     if (fs.existsSync(tmpDir)) {
       await execa.command(`rm -rf ${tmpDir}`);
@@ -123,6 +136,7 @@ async function createApp(cwd: string) {
 
     tasks.unshift(
       {
+        // 克隆仓库
         title: `git clone into ${tmpDir}`,
         task: () =>
           execa
@@ -130,6 +144,7 @@ async function createApp(cwd: string) {
             .then(() => execa.command(`rm -rf ${tmpDir}/.git`)),
       },
       {
+        // 拷贝到工作目录
         title: `copy template into ${cwd}`,
         task: () => {
           copyTemplate(tmpDir, cwd, {
@@ -141,6 +156,7 @@ async function createApp(cwd: string) {
   } else {
     const { language } = await prompts([
       {
+        // 选择语言 javascript/typescript
         message: "pick language",
         type: "select",
         name: "language",
@@ -151,6 +167,7 @@ async function createApp(cwd: string) {
       },
     ]);
     tasks.unshift({
+      // 拷贝内置模版到工作目录
       title: `copy template into ${cwd}`,
       task: () => {
         copyTemplate(
@@ -163,6 +180,7 @@ async function createApp(cwd: string) {
       },
     });
   }
+  // 执行任务流
   return new Listr(tasks).run();
 }
 
@@ -171,12 +189,11 @@ async function createApp(cwd: string) {
  */
 function cli() {
   showLogo();
-
   // 命令参数
   const cmd = getCmd();
   // 工作目录
   const cwd = path.resolve(WORK_DIR, cmd.args[1]);
-
+  // 创建应用
   if (cmd.args[0] === "create" && !fs.existsSync(cwd)) {
     createApp(cwd);
   }
