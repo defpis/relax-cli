@@ -5,7 +5,7 @@ import path from "path";
  * 检查名称是否合法
  */
 export function checkName(name: string): boolean {
-  // TODO 校验名称合法行
+  // TODO 校验名称合法性
   return !!name;
 }
 

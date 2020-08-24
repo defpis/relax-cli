@@ -1,7 +1,9 @@
 {
   "name": "{{ PROJECT_NAME }}",
   "version": "1.0.0",
-  "scripts": {},
+  "scripts": {
+    "start": "ts-node src/index.ts"
+  },
   "dependencies": {},
   "devDependencies": {
     "prettier": "^2.0.5",

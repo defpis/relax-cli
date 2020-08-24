@@ -1,7 +1,9 @@
 {
   "name": "{{ PROJECT_NAME }}",
   "version": "1.0.0",
-  "scripts": {},
+  "scripts": {
+    "start": "node src/index.js"
+  },
   "dependencies": {},
   "devDependencies": {
     "prettier": "^2.0.5"

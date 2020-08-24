@@ -21,6 +21,36 @@ const TEMPLATE_DIR = path.resolve(path.dirname(__dirname), "./template");
 const WORK_DIR = process.cwd();
 
 /**
+ * 收集模版配置
+ */
+function collectTemplates(): any {
+  const languages = ["javascript", "typescript"];
+  const templates: { [k: string]: string[] } = {};
+  fs.readdirSync(TEMPLATE_DIR).forEach((p) => {
+    if (!fs.statSync(path.resolve(TEMPLATE_DIR, p)).isDirectory()) {
+      return;
+    }
+    const names = p.split("-");
+    const language = names[names.length - 1].toLowerCase();
+    if (languages.includes(language)) {
+      const templateKey = names.slice(0, names.length - 1).join("-");
+      if (!templates[templateKey]) {
+        templates[templateKey] = [];
+      }
+      templates[templateKey].push(language);
+    } else {
+      if (!templates[p]) {
+        templates[p] = [];
+      }
+    }
+  });
+  return templates;
+}
+
+// 模版配置
+const TEMPLATES = collectTemplates();
+
+/**
  * 展示LOGO
  */
 function showLogo() {
@@ -111,10 +141,13 @@ async function createApp(cwd: string) {
       message: "pick template",
       type: "select",
       name: "template",
-      choices: [
-        { title: "simple", value: "simple" },
-        { title: "link", value: "link" },
-      ],
+      choices: Object.keys(TEMPLATES)
+        // 可以输入链接自定义模版
+        .concat(["link"])
+        .map((v: string) => ({
+          title: v,
+          value: v,
+        })),
     },
   ]);
 
@@ -154,29 +187,37 @@ async function createApp(cwd: string) {
       }
     );
   } else {
-    const { language } = await prompts([
-      {
-        // 选择语言 javascript/typescript
-        message: "pick language",
-        type: "select",
-        name: "language",
-        choices: [
-          { title: "javascript", value: "javascript" },
-          { title: "typescript", value: "typescript" },
-        ],
-      },
-    ]);
+    let targetTemplate = template;
+    const languages = TEMPLATES[template];
+
+    // 只有一个选项时跳过选择
+    if (languages.length === 1) {
+      targetTemplate = `${template}-${languages[0]}`;
+    }
+
+    if (languages.length > 1) {
+      const { language } = await prompts([
+        {
+          // 选择语言 javascript/typescript
+          message: "pick language",
+          type: "select",
+          name: "language",
+          choices: languages.map((v: string) => ({
+            title: v,
+            value: v,
+          })),
+        },
+      ]);
+      targetTemplate = `${template}-${language}`;
+    }
+
     tasks.unshift({
       // 拷贝内置模版到工作目录
       title: `copy template into ${cwd}`,
       task: () => {
-        copyTemplate(
-          path.resolve(TEMPLATE_DIR, `${template}-${language}`),
-          cwd,
-          {
-            PROJECT_NAME: path.basename(cwd),
-          }
-        );
+        copyTemplate(path.resolve(TEMPLATE_DIR, targetTemplate), cwd, {
+          PROJECT_NAME: path.basename(cwd),
+        });
       },
     });
   }
