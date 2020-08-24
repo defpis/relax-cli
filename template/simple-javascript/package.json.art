@@ -4,7 +4,6 @@
   "scripts": {},
   "dependencies": {},
   "devDependencies": {
-    "eslint": "^7.7.0",
     "prettier": "^2.0.5"
   },
   "author": "Wen Jun",
