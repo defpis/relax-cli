@@ -15,40 +15,45 @@ template.defaults.imports.upperCase = (value: string) => {
   return value.toUpperCase();
 };
 
+// 支持语言
+const LANGUAGES = ["javascript", "typescript"];
 // 内置模版
 const TEMPLATE_DIR = path.resolve(path.dirname(__dirname), "./template");
+// 组件模版
+const WIDGET_DIR = path.resolve(path.dirname(__dirname), "./widget");
 // 工作目录
 const WORK_DIR = process.cwd();
 
 /**
- * 收集模版配置
+ * 收集配置
  */
-function collectTemplates(): any {
-  const languages = ["javascript", "typescript"];
-  const templates: { [k: string]: string[] } = {};
-  fs.readdirSync(TEMPLATE_DIR).forEach((p) => {
-    if (!fs.statSync(path.resolve(TEMPLATE_DIR, p)).isDirectory()) {
+function collect(dir: string): any {
+  const result: { [k: string]: string[] } = {};
+  fs.readdirSync(dir).forEach((p) => {
+    if (!fs.statSync(path.resolve(dir, p)).isDirectory()) {
       return;
     }
     const names = p.split("-");
     const language = names[names.length - 1].toLowerCase();
-    if (languages.includes(language)) {
+    if (LANGUAGES.includes(language)) {
       const templateKey = names.slice(0, names.length - 1).join("-");
-      if (!templates[templateKey]) {
-        templates[templateKey] = [];
+      if (!result[templateKey]) {
+        result[templateKey] = [];
       }
-      templates[templateKey].push(language);
+      result[templateKey].push(language);
     } else {
-      if (!templates[p]) {
-        templates[p] = [];
+      if (!result[p]) {
+        result[p] = [];
       }
     }
   });
-  return templates;
+  return result;
 }
 
 // 模版配置
-const TEMPLATES = collectTemplates();
+const TEMPLATES = collect(TEMPLATE_DIR);
+// 组件配置
+const WIDGETS = collect(WIDGET_DIR);
 
 /**
  * 展示LOGO
@@ -83,6 +88,13 @@ function getCmd(): commander.Command {
     }
   });
 
+  // 生成组件
+  const generate = program.command("generate [dir]").action((dir) => {
+    if (!checkName(dir)) {
+      generate.help();
+    }
+  });
+
   // 解析参数
   program.parse(process.argv);
 
@@ -113,6 +125,12 @@ async function createApp(cwd: string) {
       // 初始化git
       title: `initialize git in ${cwd}`,
       task: () => {
+        // npm pack 导致 .gitignore -> .npmignore
+        // https://github.com/npm/npm/issues/7252
+        if (fs.existsSync(`${cwd}/.npmignore`)) {
+          fs.renameSync(`${cwd}/.npmignore`, `${cwd}/.gitignore`);
+        }
+
         console.log(execa.commandSync("git init", { cwd }).stdout);
         console.log(execa.commandSync("git add --all", { cwd }).stdout);
         console.log(execa.commandSync("git status", { cwd }).stdout);
@@ -225,6 +243,47 @@ async function createApp(cwd: string) {
   return new Listr(tasks).run();
 }
 
+async function generate(cwd: string) {
+  const { widget } = await prompts([
+    {
+      // 选择模版
+      message: "pick widget",
+      type: "select",
+      name: "widget",
+      choices: Object.keys(WIDGETS).map((v: string) => ({
+        title: v,
+        value: v,
+      })),
+    },
+  ]);
+
+  let targetWidget = widget;
+  const languages = WIDGETS[widget];
+
+  if (languages.length === 1) {
+    targetWidget = `${widget}-${languages[0]}`;
+  }
+
+  if (languages.length > 1) {
+    const { language } = await prompts([
+      {
+        message: "pick language",
+        type: "select",
+        name: "language",
+        choices: languages.map((v: string) => ({
+          title: v,
+          value: v,
+        })),
+      },
+    ]);
+    targetWidget = `${widget}-${language}`;
+  }
+
+  copyTemplate(path.resolve(WIDGET_DIR, targetWidget), cwd, {
+    WIDGET_NAME: path.basename(cwd),
+  });
+}
+
 /**
  * 主程序入口
  */
@@ -237,6 +296,9 @@ function cli() {
   // 创建应用
   if (cmd.args[0] === "create" && !fs.existsSync(cwd)) {
     createApp(cwd);
+  }
+  if (cmd.args[0] === "generate" && !fs.existsSync(cwd)) {
+    generate(cwd);
   }
 }
 

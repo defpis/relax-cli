@@ -1,1 +1,1 @@
-template project name must be formatted with `<template>-<language>`.
+template name must be formatted with `<template>-<language>`.

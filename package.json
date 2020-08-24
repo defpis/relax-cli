@@ -10,7 +10,8 @@
   },
   "files": [
     "lib",
-    "template"
+    "template",
+    "widget"
   ],
   "scripts": {
     "start": "rm -rf tmp && ts-node src/index.ts",
